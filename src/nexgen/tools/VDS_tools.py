@@ -2,12 +2,13 @@
 Tools to write Virtual DataSets
 """
 
+import h5py
 import logging
+
+import numpy as np
+
 from pathlib import Path
 from typing import Any, List, Tuple, Union
-
-import h5py
-import numpy as np
 
 vds_logger = logging.getLogger("NeXusGenerator.writer.vds")
 
@@ -15,7 +16,7 @@ vds_logger = logging.getLogger("NeXusGenerator.writer.vds")
 def image_vds_writer(
     nxsfile: h5py.File,
     data_shape: Union[Tuple, List],
-    first=True,
+    is_first = True,
     data_type: Any = np.uint16,
 ):
     """
@@ -38,22 +39,26 @@ def image_vds_writer(
             dsets.append(k)
     # For every source dataset define its shape and number of frames
     # Once again, it is assumed that the maximum number of frames per dataset is 1000
-    frames = (data_shape[0] // 1000) * [1000] + [data_shape[0] % 1000]
-    sshape = [(f, *data_shape[1:]) for f in frames]
+    full_images_for_3d = data_shape[0] * 2
+    images_for_one_grid = data_shape[0]
+
+    print(f"For one grid: {images_for_one_grid}, for full {full_images_for_3d}")
+    size_limit = 1200
+    frames_full = (full_images_for_3d // size_limit) * [size_limit] + [full_images_for_3d % size_limit]
+    frames_one = (images_for_one_grid // size_limit) * [size_limit] + [images_for_one_grid % size_limit]
+    sshape = [(f, *data_shape[1:]) for f in frames_full]
 
     # Create virtual layout
     layout = h5py.VirtualLayout(shape=data_shape, dtype=data_type)
     start = 0
     for n, dset in enumerate(dsets):
-        end = start + frames[n]
-        if first:
-            vsource = h5py.VirtualSource(".", "/entry/data/" + dset, shape=sshape[n])[
-                : frames / 2
-            ]
+        end = start + frames_one[n]
+        if is_first:
+            vsource = h5py.VirtualSource(".", "/entry/data/" + dset, shape=sshape[n])[:images_for_one_grid]
         else:
-            vsource = h5py.VirtualSource(".", "/entry/data/" + dset, shape=sshape[n])[
-                frames / 2 :
-            ]
+            vsource = h5py.VirtualSource(".", "/entry/data/" + dset, shape=sshape[n])[images_for_one_grid:]
+
+        print(f"Shape of layout {layout.shape}, shape of source {vsource.shape}")
         layout[start:end:1, :, :] = vsource
         start = end
 
