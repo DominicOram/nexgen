@@ -2,13 +2,12 @@
 Tools to write Virtual DataSets
 """
 
-import h5py
 import logging
-
-import numpy as np
-
 from pathlib import Path
 from typing import Any, List, Tuple, Union
+
+import h5py
+import numpy as np
 
 vds_logger = logging.getLogger("NeXusGenerator.writer.vds")
 
@@ -16,6 +15,7 @@ vds_logger = logging.getLogger("NeXusGenerator.writer.vds")
 def image_vds_writer(
     nxsfile: h5py.File,
     data_shape: Union[Tuple, List],
+    first=True,
     data_type: Any = np.uint16,
 ):
     """
@@ -46,7 +46,14 @@ def image_vds_writer(
     start = 0
     for n, dset in enumerate(dsets):
         end = start + frames[n]
-        vsource = h5py.VirtualSource(".", "/entry/data/" + dset, shape=sshape[n])
+        if first:
+            vsource = h5py.VirtualSource(".", "/entry/data/" + dset, shape=sshape[n])[
+                : frames / 2
+            ]
+        else:
+            vsource = h5py.VirtualSource(".", "/entry/data/" + dset, shape=sshape[n])[
+                frames / 2 :
+            ]
         layout[start:end:1, :, :] = vsource
         start = end
 
