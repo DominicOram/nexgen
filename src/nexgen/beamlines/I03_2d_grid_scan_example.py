@@ -45,7 +45,7 @@ goniometer_axes = {
         "rotation",
         "rotation",
     ],
-    "units": ["deg", "mm", "mm", "mm", "deg", "deg"],
+    "units": ["deg", "um", "um", "um", "deg", "deg"],
     "offsets": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     "starts": [150.0, 0.0, None, None, 0.0, 0.0],
     "ends": [0.0] * 6,
